@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zyf.mybatis.dao.EmployeeMapper">
+
+	<!-- namespace:名称空间;指定为接口的全类名 id：唯一标识 resultType：返回值类型 #{id}:从参数中取出id值 public -->
+	
+	<!-- public Map<Integer,Employee> getEmpByLastNameLikeReturnMap(String lastName); -->
+	<select id="getEmpByLastNameLikeReturnMap"
+		resultType="cn.zyf.mybatis.bean.Employee">
+		select * from tbl_employee where last_name like #{lastName}
+	</select>
+	
+	<!-- public Map<String, Object> getEmpByReturnMap(Integer id); -->
+	<select id="getEmpByReturnMap" resultType="map">
+		select * from tbl_employee where id= #{id}
+	</select>
+	
+	<!-- public List<Employee> getEmpByLastNameLike(String lastName); -->
+	<!-- resultType如果返回是一个集合，要写集合中元素的类型 -->
+	<select id="getEmpByLastNameLike"
+		resultType="cn.zyf.mybatis.bean.Employee">
+		select * from tbl_employee where last_name like #{lastName}
+	</select>
+	
+	<!-- public Employee getEmpByMap(Map<String, Object> map); -->	
+	<select id="getEmpByMap"
+		resultType="cn.zyf.mybatis.bean.Employee">
+		select * from tbl_employee where id = #{id} and last_name=#{lastName}
+	</select>
+	
+	<!-- public Employee getEmpByIdAndLastName(Integer id,String lastName); -->
+	<select id="getEmpByIdAndLastName"
+		resultType="cn.zyf.mybatis.bean.Employee">
+		select * from tbl_employee where id = #{id} and last_name=#{lastName}
+	</select>
+	
+	<!-- Employee getEmpById(Integer id) -->
+	<select id="getEmpById"
+		resultType="cn.zyf.mybatis.bean.Employee" databaseId="mysql">
+		select id,last_name,email,gender from tbl_employee where id = #{id}
+	</select>
+
+	<select id="getEmpById"
+		resultType="cn.zyf.mybatis.bean.Employee" databaseId="oracle">
+		select id,last_name,email,gender from tbl_employee where id = #{id}
+	</select>
+
+	<!-- public void addEmp(Employee employee); 
+		获取自增的主键：
+			parameterType：参数类型，可省略
+			mysql支持自增主键，自增主键值得获取，mybatis也是利用statement.getGenreatedKeys()
+			useGeneratedKeys="true" 使用自增主键获取主键值策略
+			keyProperty 指定对应的主键属性，也就是mybatis获取到主键值以后，封装到javaBean的哪个属性
+	-->
+	<insert id="addEmp" parameterType="cn.zyf.mybatis.bean.Employee"
+		useGeneratedKeys="true" keyProperty="id">
+		insert into tbl_employee(last_name,email,gender) 
+		values (#{lastName},#{email},#{gender})
+	</insert>
+	
+	<!-- 
+		Oracle不支持自增：Oracle使用序列来模拟自增
+		每次插入的数据的主键是从序列中拿到的值，如何获得这个值
+	 -->
+	 <insert id="addEmp" databaseId="oracle">
+	 	<!-- 
+	 		keyProperty决定查出的值放在javaBean的哪个属性中 
+	 		order="BEFORE"当前sql在插入sql之前运行
+	 		resultType 查出的数据的返回值类型
+	 		
+	 		BEFORE运行顺序
+	 			先运行selectKey查询id的sql，查出id封装给javaBean的id属性
+	 			在运行插入的sql，就可以取出id属性对应的值
+	 			
+	 		AFTER运行顺序
+	 			先运行插入的sql（从序列中取出最新值最为id）
+	 			在运行selectKey查询id的sql
+	 	-->
+	 	<selectKey keyProperty="id" order="BEFORE" resultType="Integer">
+	 		<!-- 编写查询主键的sql -->
+	 		<!--  BEFORE:  -->
+	 		select last_name.nextVal from dual
+	 		<!-- AFTER: select last_name.currVal from dual -->
+	 	</selectKey>
+	 	<!-- 插入时的主键是从序列中拿到的 -->
+	 	<!-- BEFORE -->
+	 	insert into tbl_employee(last_name,email,gender) 
+		values (#{id},#{lastName},#{email},#{gender}) 
+		
+		<!-- AFTER
+		insert into tbl_employee(last_name,email,gender) 
+		values (last_name.nextVal,#{lastName},#{email},#{gender}) 
+		-->
+	 </insert>
+	
+	<!-- public void updateEmp(Employee employee); -->
+	<update id="updateEmp">
+		update tbl_employee 
+		set last_name=#{lastName},email=#{email},gender=#{gender} 
+		where id=#{id}
+	</update>
+	
+	<!-- public void deleteEmpById(Integer id); -->
+    <delete id="deleteEmpById">
+    	delete from tbl_employee where id=#{id}
+    </delete>
+
+
+</mapper>
